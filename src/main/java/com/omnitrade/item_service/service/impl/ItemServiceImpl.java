@@ -84,7 +84,6 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public ItemResponse getItemById(Long id) {
         log.info("Fetching item with ID: {}", id);
 
