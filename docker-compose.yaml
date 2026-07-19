@@ -25,12 +25,27 @@ services:
 
       KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
 
-      # VERY IMPORTANT FOR SINGLE BROKER
       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_MIN_INSYNC_REPLICAS: 1
 
-      # Optional
       KAFKA_NUM_PARTITIONS: 3
+
+  redis:
+    image: redis:7.4
+    container_name: omnitrade-redis
+
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    command: redis-server --appendonly yes
+
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

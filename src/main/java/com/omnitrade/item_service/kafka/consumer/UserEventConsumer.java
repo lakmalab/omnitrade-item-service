@@ -1,1 +1,4 @@
-UserEventConsumer.java
+package com.omnitrade.item_service.kafka.consumer;
+
+public class UserEventConsumer {
+}
