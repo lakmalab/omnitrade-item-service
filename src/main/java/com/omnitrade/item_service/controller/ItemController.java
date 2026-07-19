@@ -54,7 +54,7 @@ public class ItemController {
             @PathVariable Long id,
             @RequestParam UUID sellerId) {
         itemService.deleteItem(id, sellerId);
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/seller/{sellerId}")

@@ -8,7 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.descriptor.jdbc.VarcharJdbcType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -28,7 +30,8 @@ public class Item {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "seller_id", nullable = false, columnDefinition = "UUID")
+    @JdbcType(VarcharJdbcType.class)
+    @Column(name = "seller_id", nullable = false, columnDefinition = "CHAR(36)")
     private UUID sellerId;
 
     @Column(name = "title", nullable = false, length = 255)
@@ -47,7 +50,7 @@ public class Item {
     private String district;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "condition", nullable = false)
+    @Column(name = "`condition`", nullable = false)
     private ItemCondition condition;
 
     @Column(name = "category_id", nullable = false)
