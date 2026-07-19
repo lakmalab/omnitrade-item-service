@@ -2,6 +2,8 @@ package com.omnitrade.item_service.service.impl;
 
 import com.omnitrade.item_service.exception.ResourceNotFoundException;
 import com.omnitrade.item_service.exception.UnauthorizedException;
+import com.omnitrade.item_service.kafka.mapper.ItemEventMapper;
+import com.omnitrade.item_service.kafka.producer.ItemEventProducer;
 import com.omnitrade.item_service.model.dto.CreateItemRequest;
 import com.omnitrade.item_service.model.dto.UpdateItemRequest;
 import com.omnitrade.item_service.model.dto.ItemResponse;
@@ -26,6 +28,8 @@ import java.util.UUID;
 public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
+    private final ItemEventProducer eventProducer;
+    private final ItemEventMapper eventMapper;
 
     @Override
     public ItemResponse createItem(CreateItemRequest request) {
@@ -50,6 +54,11 @@ public class ItemServiceImpl implements ItemService {
                 .build();
 
         Item savedItem = itemRepository.save(item);
+        eventProducer.publishItemCreated(
+                eventMapper.toItemCreatedEvent(savedItem),
+                savedItem.getId()
+        );
+
         log.info("Item created successfully with ID: {}", savedItem.getId());
 
         return mapToResponse(savedItem);
@@ -78,6 +87,10 @@ public class ItemServiceImpl implements ItemService {
         existingItem.setAllowOffers(request.getAllowOffers() != null && request.getAllowOffers());
 
         Item updatedItem = itemRepository.save(existingItem);
+        eventProducer.publishItemUpdated(
+                eventMapper.toItemUpdatedEvent(updatedItem),
+                updatedItem.getId()
+        );
         log.info("Item updated successfully with ID: {}", updatedItem.getId());
 
         return mapToResponse(updatedItem);
@@ -106,9 +119,14 @@ public class ItemServiceImpl implements ItemService {
             throw new UnauthorizedException("You are not authorized to delete this item");
         }
 
-        // Soft delete - update status to DELETED
         item.setStatus(ItemStatus.DELETED);
-        itemRepository.save(item);
+
+        Item deletedItem = itemRepository.save(item);
+
+        eventProducer.publishItemDeleted(
+                eventMapper.toItemDeletedEvent(deletedItem),
+                deletedItem.getId()
+        );
         log.info("Item deleted successfully with ID: {}", id);
     }
 
@@ -171,16 +189,43 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public void incrementViewCount(Long itemId) {
         itemRepository.incrementViewCount(itemId);
+
+        itemRepository.findById(itemId)
+                .ifPresent(item ->
+                        eventProducer.publishItemViewed(
+                                eventMapper.toItemViewedEvent(item),
+                                item.getId()
+                        ));
     }
 
     @Override
     public void incrementFavoriteCount(Long itemId) {
         itemRepository.incrementFavoriteCount(itemId);
+
+        itemRepository.findById(itemId)
+                .ifPresent(item ->
+                        eventProducer.publishItemFavorited(
+                                eventMapper.toItemFavoritedEvent(
+                                        item,
+                                        getCurrentUserId()
+                                ),
+                                item.getId()
+                        ));
     }
 
     @Override
     public void decrementFavoriteCount(Long itemId) {
         itemRepository.decrementFavoriteCount(itemId);
+
+        itemRepository.findById(itemId)
+                .ifPresent(item ->
+                        eventProducer.publishItemUnfavorited(
+                                eventMapper.toItemUnfavoritedEvent(
+                                        item,
+                                        getCurrentUserId()
+                                ),
+                                item.getId()
+                        ));
     }
 
     @Override
