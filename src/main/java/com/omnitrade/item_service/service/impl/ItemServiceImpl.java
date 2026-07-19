@@ -13,6 +13,9 @@ import com.omnitrade.item_service.repository.ItemRepository;
 import com.omnitrade.item_service.service.ItemService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -65,6 +68,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @CachePut(
+            value = "items",
+            key = "#result.id"
+    )
     public ItemResponse updateItem(UpdateItemRequest request) {
         log.info("Updating item with ID: {}", request.getId());
 
@@ -97,6 +104,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Cacheable(
+            value = "items",
+            key = "#id"
+    )
     public ItemResponse getItemById(Long id) {
         log.info("Fetching item with ID: {}", id);
 
@@ -109,6 +120,10 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @CacheEvict(
+            value = "items",
+            key = "#id"
+    )
     public void deleteItem(Long id, UUID sellerId) {
         log.info("Deleting item with ID: {}", id);
 
@@ -140,6 +155,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "activeItems"
+    )
     public Page<ItemResponse> getActiveItems(Pageable pageable) {
         log.info("Fetching active items");
         return itemRepository.findByStatus(ItemStatus.ACTIVE, pageable)
@@ -148,6 +166,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "itemsByCategory"
+    )
     public Page<ItemResponse> getItemsByCategory(Long categoryId, Pageable pageable) {
         log.info("Fetching items for category: {}", categoryId);
         return itemRepository.findByCategoryId(categoryId, pageable)
@@ -156,6 +177,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "searchResults"
+    )
     public Page<ItemResponse> searchItems(String keyword, Pageable pageable) {
         log.info("Searching items with keyword: {}", keyword);
         return itemRepository.findByTitleContainingIgnoreCaseAndStatus(keyword, ItemStatus.ACTIVE, pageable)
@@ -164,6 +188,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "itemsByCity"
+    )
     public Page<ItemResponse> getItemsByCity(String city, Pageable pageable) {
         log.info("Fetching items for city: {}", city);
         return itemRepository.findByCityIgnoreCaseAndStatus(city, ItemStatus.ACTIVE, pageable)
@@ -172,6 +199,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "itemsByCityAndDistrict"
+    )
     public Page<ItemResponse> getItemsByCityAndDistrict(String city, String district, Pageable pageable) {
         log.info("Fetching items for city: {} and district: {}", city, district);
         return itemRepository.findByCityIgnoreCaseAndDistrictIgnoreCaseAndStatus(city, district, ItemStatus.ACTIVE, pageable)
@@ -180,6 +210,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "itemsByPriceRange"
+    )
     public Page<ItemResponse> getItemsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
         log.info("Fetching items in price range: {} - {}", minPrice, maxPrice);
         return itemRepository.findByPriceBetweenAndStatus(minPrice, maxPrice, ItemStatus.ACTIVE, pageable)
